@@ -1,5 +1,5 @@
 ## DATA TEST
-test/
+test/test_data/
 
 ## Container images
 *.img
@@ -9,7 +9,6 @@ log
 .nextflow*
 .nextflow/
 results/
-results2/
 work/
 
 
