@@ -55,7 +55,6 @@ ENV PATH=$PATH:/scif/apps/sratoolkit/bin
 ENV PATH=$PATH:/scif/apps/tbl2asn/bin
 ENV PATH=$PATH:/scif/apps/trimmomatic/bin
 ENV PATH=$PATH:/scif/apps/unicycler/bin
-ENV LD_LIBRARY_PATH=/usr/local/lib
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scif/apps/aragorn/lib/lib
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scif/apps/barrnap/lib/lib
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scif/apps/bowtie2/lib/lib
@@ -78,6 +77,7 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scif/apps/sratoolkit/lib/lib
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scif/apps/tbl2asn/lib/lib
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scif/apps/trimmomatic/lib/lib
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scif/apps/unicycler/lib/lib
+#ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH/usr/local/lib
 
 #ENTRYPOINT ["/opt/docker-entrypoint.sh"]
 #CMD ["scif"]
