@@ -233,7 +233,7 @@ else if (filename.indexOf(".fastq.gz") > 0) "trimmed/$filename"
 	script:
 	prefix = name - ~/(_S[0-9]{2})?(_L00[1-9])?(.R1)?(_1)?(_R1)?(_trimmed)?(_val_1)?(_00*)?(\.fq)?(\.fastq)?(\.gz)?$/
 	"""
-	trimmomatic PE -phred33 $reads -threads 1 $prefix"_paired_R1.fastq" $prefix"_unpaired_R1.fastq" $prefix"_paired_R2.fastq" $prefix"_unpaired_R2.fastq" ILLUMINACLIP:${params.trimmomatic_adapters_file}:${params.trimmomatic_adapters_parameters} SLIDINGWINDOW:${params.trimmomatic_window_length}:${params.trimmomatic_window_value} MINLEN:${params.trimmomatic_mininum_length} 2> ${name}.log
+	java -jar $TRIMMOMATIC_PATH/trimmomatic-0.33.jar PE -threads 1 -phred33 $reads $prefix"_paired_R1.fastq" $prefix"_unpaired_R1.fastq" $prefix"_paired_R2.fastq" $prefix"_unpaired_R2.fastq" ILLUMINACLIP:${params.trimmomatic_adapters_file}:${params.trimmomatic_adapters_parameters} SLIDINGWINDOW:${params.trimmomatic_window_length}:${params.trimmomatic_window_value} MINLEN:${params.trimmomatic_mininum_length} 2> ${name}.log
 
 	gzip *.fastq
 
@@ -250,6 +250,8 @@ else if (filename.indexOf(".fastq.gz") > 0) "trimmed/$filename"
 process unicycler {
 	tag "$prefix"
 	publishDir path: { "${params.outdir}/unicycler" }, mode: 'copy'
+	cpus '20'
+	penv 'openmp'
 
 	input:
 	set file(readsR1),file(readsR2) from trimmed_paired_reads_unicycler
@@ -260,7 +262,7 @@ process unicycler {
 	script:
 	prefix = readsR1.toString() - ~/(.R1)?(_1)?(_R1)?(_trimmed)?(_paired)?(_val_1)?(\.fq)?(\.fastq)?(\.gz)?$/
 	"""
-	unicycler -1 $readsR1 -2 $readsR2 --pilon_path \$PILON_PATH -o .
+	unicycler -t 20 -1 $readsR1 -2 $readsR2 --pilon_path \$PILON_PATH -o .
 	mv assembly.fasta $prefix"_assembly.fasta"
 	"""
 }
@@ -286,6 +288,7 @@ process quast {
 	"""
 }
 
+/* Not working in HPC
 process prokka {
 	tag "$prefix"
 	publishDir path: {"${params.outdir}/prokka"}, mode: 'copy',
@@ -305,6 +308,7 @@ process prokka {
 	mv prokka_results/prokka.txt prokka_results/${prefix}_prokka.txt
 	"""
 }
+*/
 
 
 /*
@@ -315,13 +319,14 @@ process prokka {
 process multiqc_assembly {
 	tag "$prefix"
 	publishDir "${params.outdir}/MultiQC", mode: 'copy'
+	conda '/processing_Data/bioinformatics/pipelines/miniconda3/envs/assembly'
 
 	input:
 	file multiqc_config
 	file (fastqc:'fastqc/*') from fastqc_results.collect()
 	file ('trimommatic/*') from trimmomatic_results.collect()
 	file ('trimommatic/*') from trimmomatic_fastqc_reports.collect()
-	file ('prokka/*') from prokka_multiqc.collect()
+/*	file ('prokka/*') from prokka_multiqc.collect() */
 	file ('quast/*') from quast_multiqc.collect()
 
 	output:
@@ -334,7 +339,7 @@ process multiqc_assembly {
 	prefix = fastqc[0].toString() - '_fastqc.html' - 'fastqc/'
 
 	"""
-	multiqc -d . --config $multiqc_config
+	multiqc -d . --config $multiqc_config 2>&1
 	"""
 
 }
