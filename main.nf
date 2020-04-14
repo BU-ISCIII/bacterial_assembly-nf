@@ -193,6 +193,7 @@ try {
  */
 process fastqc {
 	tag "$prefix"
+  label 'process_medium'
 	publishDir "${params.outdir}/fastqc", mode: 'copy',
 		saveAs: {filename -> filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename"}
 
@@ -207,12 +208,13 @@ process fastqc {
 
 	prefix = name - ~/(_S[0-9]{2})?(_L00[1-9])?(.R1)?(_1)?(_R1)?(_trimmed)?(_val_1)?(_00*)?(\.fq)?(\.fastq)?(\.gz)?$/
 	"""
-	fastqc -t 1 $reads
+	fastqc --threads $task.cpus $reads
 	"""
 }
 
 process trimming {
 	tag "$prefix"
+  label 'process_medium'
 	publishDir "${params.outdir}/trimming", mode: 'copy',
 		saveAs: {filename ->
 			if (filename.indexOf("_fastqc") > 0) "FastQC/$filename"
@@ -233,11 +235,11 @@ else if (filename.indexOf(".fastq.gz") > 0) "trimmed/$filename"
 	script:
 	prefix = name - ~/(_S[0-9]{2})?(_L00[1-9])?(.R1)?(_1)?(_R1)?(_trimmed)?(_val_1)?(_00*)?(\.fq)?(\.fastq)?(\.gz)?$/
 	"""
-	java -jar $TRIMMOMATIC_PATH/trimmomatic-0.33.jar PE -threads 1 -phred33 $reads $prefix"_paired_R1.fastq" $prefix"_unpaired_R1.fastq" $prefix"_paired_R2.fastq" $prefix"_unpaired_R2.fastq" ILLUMINACLIP:${params.trimmomatic_adapters_file}:${params.trimmomatic_adapters_parameters} SLIDINGWINDOW:${params.trimmomatic_window_length}:${params.trimmomatic_window_value} MINLEN:${params.trimmomatic_mininum_length} 2> ${name}.log
+	trimmomatic PE -threads ${task.cpus} -phred33 $reads $prefix"_paired_R1.fastq" $prefix"_unpaired_R1.fastq" $prefix"_paired_R2.fastq" $prefix"_unpaired_R2.fastq" ILLUMINACLIP:${params.trimmomatic_adapters_file}:${params.trimmomatic_adapters_parameters} SLIDINGWINDOW:${params.trimmomatic_window_length}:${params.trimmomatic_window_value} MINLEN:${params.trimmomatic_mininum_length} 2> ${name}.log
 
 	gzip *.fastq
 
-	fastqc -q *_paired_*.fastq.gz
+	fastqc --threads $task.cpus -q *_paired_*.fastq.gz
 
 	"""
 }
@@ -249,9 +251,8 @@ else if (filename.indexOf(".fastq.gz") > 0) "trimmed/$filename"
 
 process unicycler {
 	tag "$prefix"
+  label 'process_medium'
 	publishDir path: { "${params.outdir}/unicycler" }, mode: 'copy'
-	cpus '20'
-	penv 'openmp'
 
 	input:
 	set file(readsR1),file(readsR2) from trimmed_paired_reads_unicycler
@@ -262,13 +263,14 @@ process unicycler {
 	script:
 	prefix = readsR1.toString() - ~/(.R1)?(_1)?(_R1)?(_trimmed)?(_paired)?(_val_1)?(\.fq)?(\.fastq)?(\.gz)?$/
 	"""
-	unicycler -t 20 -1 $readsR1 -2 $readsR2 --pilon_path \$PILON_PATH -o .
+	unicycler --threads ${task.cpus} -1 $readsR1 -2 $readsR2 --pilon_path \$PILON_PATH -o .
 	mv assembly.fasta $prefix"_assembly.fasta"
 	"""
 }
 
 process quast {
 	tag "$prefix"
+  label 'process_medium'
 	publishDir path: {"${params.outdir}/quast"}, mode: 'copy',
 						saveAs: { filename -> if(filename == "quast_results") "${prefix}_quast_results"}
 
@@ -284,7 +286,7 @@ process quast {
 	script:
 	prefix = scaffolds[0].toString() - ~/(_scaffolds\.fasta)?$/
 	"""
-	quast.py -R $fasta -G $gtf $scaffolds
+	quast.py -R $fasta -G $gtf --threads ${task.cpus} $scaffolds
 	"""
 }
 
