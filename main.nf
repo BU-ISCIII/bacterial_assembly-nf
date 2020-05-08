@@ -251,7 +251,7 @@ else if (filename.indexOf(".fastq.gz") > 0) "trimmed/$filename"
 
 process unicycler {
 	tag "$prefix"
-  label 'process_medium'
+  label 'process_high'
 	publishDir path: { "${params.outdir}/unicycler" }, mode: 'copy'
 
 	input:
