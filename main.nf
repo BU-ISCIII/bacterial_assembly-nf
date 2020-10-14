@@ -290,7 +290,7 @@ process quast {
 	"""
 }
 
-/* Not working in HPC
+
 process prokka {
 	tag "$prefix"
 	publishDir path: {"${params.outdir}/prokka"}, mode: 'copy',
@@ -310,8 +310,6 @@ process prokka {
 	mv prokka_results/prokka.txt prokka_results/${prefix}_prokka.txt
 	"""
 }
-*/
-
 
 /*
  * STEP 11 MultiQC
