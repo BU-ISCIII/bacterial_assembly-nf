@@ -294,20 +294,18 @@ process quast {
 process prokka {
 	tag "$prefix"
 	publishDir path: {"${params.outdir}/prokka"}, mode: 'copy',
-						saveAs: { filename -> if(filename == "prokka_results") "${prefix}_prokka_results"}
+						saveAs: { filename -> if(filename == "prokka_results") "${prefix}_prokka"}
 
 	input:
 	file scaffold from scaffold_prokka
 
 	output:
 	file "prokka_results" into prokka_results
-	file "prokka_results/${prefix}_prokka.txt" into prokka_multiqc
 
 	script:
-	prefix = scaffold.toString() - ~/(_scaffolds\.fasta)?$/
+	prefix = scaffold.toString() - ~/(_paired_assembly\.fasta)?$/
 	"""
-	prokka --force --outdir prokka_results --prefix prokka --genus Listeria --species monocytogenes --strain $prefix --locustag BU-ISCIII --compliant --kingdom Bacteria $scaffold
-	mv prokka_results/prokka.txt prokka_results/${prefix}_prokka.txt
+	prokka --force --outdir prokka_results --prefix $prefix --addgenes  --kingdom Bacteria --usegenus --gram + --locustag $prefix --centre CNM --compliant $scaffold
 	"""
 }
 
