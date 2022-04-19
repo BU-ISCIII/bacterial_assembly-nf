@@ -123,6 +123,8 @@ params.singleEnd = false
 
 // Validate  mandatory inputs
 params.reads = false
+params.skip_prokka = false
+
 if (! params.reads ) exit 1, "Missing reads: $params.reads. Specify path with --reads"
 
 if ( ! params.gtf ){
@@ -160,6 +162,8 @@ summary['Working dir']         = workflow.workDir
 summary['Output dir']          = params.outdir
 summary['Script dir']          = workflow.projectDir
 summary['Save Trimmed']        = params.saveTrimmed
+summary['Skip Prokka']         = params.skip_prokka
+
 if( params.notrim ){
     summary['Trimming Step'] = 'Skipped'
 } else {
@@ -296,6 +300,9 @@ process prokka {
 	publishDir path: {"${params.outdir}/prokka"}, mode: 'copy',
 						saveAs: { filename -> if(filename == "prokka_results") "${prefix}_prokka"}
 
+        when:
+        !params.skip_prokka
+
 	input:
 	file scaffold from scaffold_prokka
 
@@ -305,7 +312,7 @@ process prokka {
 	script:
 	prefix = scaffold.toString() - ~/(_paired_assembly\.fasta)?$/
 	"""
-	prokka --force --outdir prokka_results --prefix $prefix --addgenes  --kingdom Bacteria --usegenus --gram + --locustag $prefix --centre CNM --compliant $scaffold
+	prokka --force --outdir prokka_results --prefix $prefix --addgenes --kingdom Bacteria --usegenus --gram - --locustag $prefix --centre CNM --compliant $scaffold
 	"""
 }
 
@@ -317,7 +324,6 @@ process prokka {
 process multiqc_assembly {
 	tag "$prefix"
 	publishDir "${params.outdir}/MultiQC", mode: 'copy'
-	conda '/processing_Data/bioinformatics/pipelines/miniconda3/envs/assembly'
 
 	input:
 	file multiqc_config
